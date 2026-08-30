@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <title>Faunaris Skok — Namaluj si figurku</title>
+  <title>Skok do Faunaris — Namaluj si figurku</title>
   <style>
 :root {
   --ink: #1a120c;
@@ -194,7 +194,7 @@ body {
 </head>
 <body>
   <div id="frame">
-    <canvas id="game" width="384" height="216" aria-label="Faunaris Skok"></canvas>
+    <canvas id="game" width="384" height="216" aria-label="Skok do Faunaris"></canvas>
     <p id="howto-desktop" class="desktop-only">←→ běh · Mezerník skok · J schopnost · Esc pauza · Enter = menu</p>
     <p id="howto-mobile" class="mobile-only">
       <strong>Jak hrát:</strong> klepni na herní obraz nahoře.
@@ -343,31 +343,6 @@ body {
       ], { start: [2, 10], powerAt: [17, 3], flag: [72, 10] }),
     },
     {
-      id: "dunara",
-      name: "Dunara — Pouštní říše",
-      subtitle: "Cesta k Mechauře. Pozor na past!",
-      sky: ["#e8c878", "#d89848"],
-      ground: "#c8a060",
-      dirt: "#8a6030",
-      accent: "#e0b050",
-      width: 78,
-      map: buildMap(78, [
-        "..............................................................................",
-        "..............................................................................",
-        "..............................................................................",
-        "......................?.......................................................",
-        "...................####...............o.......................................",
-        "....................................####..............?.......................",
-        "..........o.........................................####......................",
-        "........####...........e......................................................",
-        "...................#######.............e.......o..............................",
-        "...................................#######...####..........e..................",
-        "....e........................sss..............................................",
-        "=======..========......========....========.....========....========..........",
-        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-      ], { start: [2, 10], powerAt: [22, 3], flag: [74, 10] }),
-    },
-    {
       id: "mechaura",
       name: "Mechaura — Strojová říše",
       subtitle: "Hynero střeží bránu. Poraz padoucha!",
@@ -461,7 +436,7 @@ body {
     storyI: 0,
     storyT: 0,
     shake: 0,
-    wonAll: false,
+    completing: false,
   };
 
   function makePlayer(ch) {
@@ -532,7 +507,7 @@ body {
   function beginGame() {
     state.crystals = 0;
     state.lives = 3;
-    state.wonAll = false;
+    state.completing = false;
     loadLevel(0);
     state.mode = "play";
   }
@@ -566,13 +541,8 @@ body {
       return;
     }
     if ((state.mode === "dead" || state.mode === "win") && (code === "Enter" || code === "Space")) {
-      if (state.mode === "win" && state.wonAll) {
-        state.mode = "title";
-        return;
-      }
       if (state.mode === "win") {
-        loadLevel(state.levelIndex);
-        state.mode = "play";
+        state.mode = "title";
         return;
       }
       if (state.lives > 0) {
@@ -739,8 +709,7 @@ body {
         state.flash = 8;
         if (state.boss.hp <= 0) {
           state.boss.alive = false;
-          toast("Hynero poražen!");
-          setTimeout(() => finishLevel(), 600);
+          toast("Hynero poražen! Doběhni k vlajce.");
         }
       }
     }
@@ -768,18 +737,18 @@ body {
           state.shake = 10;
           if (b.hp <= 0) {
             b.alive = false;
-            toast("Hynero poražen!");
-            setTimeout(() => finishLevel(), 600);
+          toast("Hynero poražen! Doběhni k vlajce.");
           }
         } else hurt(p, true);
       }
     }
 
-    // flag / goal
+    // flag / goal — once per level
     const f = L.flag;
-    if (rects(p, { x: f.x, y: f.y - 24, w: 10, h: 40 }) && (!L.boss || (state.boss && !state.boss.alive))) {
-      finishLevel();
-    }
+    const atFlag =
+      rects(p, { x: f.x, y: f.y - 24, w: 10, h: 40 }) &&
+      (!L.boss || (state.boss && !state.boss.alive));
+    if (atFlag) finishLevel();
 
     // camera
     state.camX = Math.max(0, Math.min(p.x - W * 0.4, L.w * T - W));
@@ -846,8 +815,7 @@ body {
         state.boss.hp--;
         if (state.boss.hp <= 0) {
           state.boss.alive = false;
-          toast("Hynero poražen!");
-          setTimeout(() => finishLevel(), 600);
+          toast("Hynero poražen! Doběhni k vlajce.");
         }
       }
       toast("Otřes Rockary!");
@@ -878,16 +846,13 @@ body {
   }
 
   function finishLevel() {
-    if (state.mode !== "play") return;
-    if (state.levelIndex >= LEVELS.length - 1) {
-      state.wonAll = true;
-      state.mode = "win";
-      state.msg = "Říše jsou v bezpečí! Trojice zvítězila.";
-      return;
-    }
-    state.levelIndex++;
-    loadLevel(state.levelIndex);
-    toast("Další říše: " + state.level.name);
+    if (state.mode !== "play" || state.completing) return;
+    state.completing = true;
+    const next = (state.levelIndex + 1) % LEVELS.length;
+    const looped = next === 0 && state.levelIndex === LEVELS.length - 1;
+    loadLevel(next);
+    state.completing = false;
+    toast(looped ? "Znovu Liora — hraješ dál!" : "Další říše: " + state.level.name);
   }
 
   function toast(t) {
@@ -909,7 +874,7 @@ body {
       drawWorld();
       if (state.mode === "pause") drawOverlay("PAUZA", "Enter = pokračovat");
       if (state.mode === "dead") drawOverlay("KONEC BĚHU", "Enter = znovu / menu");
-      if (state.mode === "win") drawOverlay(state.wonAll ? "VÍTĚZSTVÍ FAUNARIS" : "ŘÍŠE DOBYTA", "Dole: figurky na e-shopu");
+      if (state.mode === "win") drawOverlay("ŘÍŠE DOBYTA", "Dole: figurky na e-shopu");
     }
     ctx.restore();
   }
@@ -933,9 +898,10 @@ body {
       ctx.lineTo(x + 28, 130);
       ctx.fill();
     }
-    pixelText("FAUNARIS SKOK", W / 2, 48, "#f0e0a8", 2, true);
-    pixelText("Namaluj si figurku", W / 2, 72, "#8fad96", 1, true);
-    pixelText("Pixelové dobrodružství osmi říší", W / 2, 96, "#c8d8c0", 1, true);
+    pixelText("SKOK DO", W / 2, 34, "#f0e0a8", 2, true);
+    pixelText("FAUNARIS", W / 2, 56, "#f0e0a8", 2, true);
+    pixelText("Namaluj si figurku", W / 2, 78, "#8fad96", 1, true);
+    pixelText("3 říše — pořád dokola", W / 2, 94, "#c8d8c0", 1, true);
     state.selectBlink++;
     if (Math.floor(state.selectBlink / 30) % 2 === 0) {
       pixelText("Stiskni ENTER", W / 2, 160, "#e07028", 1, true);
