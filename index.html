@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Faunaris Skok — Namaluj si figurku</title>
+  <style>
+:root {
+  --ink: #1a120c;
+  --ember: #e07028;
+  --sky: #7ec8e8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html,
+body {
+  min-height: 100%;
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 20%, #2a4a38 0%, transparent 55%),
+    linear-gradient(180deg, #0a1610 0%, #13241c 40%, #1a120c 100%);
+  color: #e8dcc8;
+  font-family: "Silkscreen", "Courier New", monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  padding: 0.5rem;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+#frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 720px;
+}
+
+#game {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  /* Critical for iOS Safari — height:auto alone often collapses canvas to 0 */
+  aspect-ratio: 384 / 216;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border: 3px solid #3d7a52;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  background: #6eb8d8;
+  touch-action: none;
+}
+
+#howto-desktop,
+#howto-mobile {
+  width: 100%;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #c8dcc8;
+  background: rgba(8, 20, 14, 0.65);
+  border: 1px solid #2f5a42;
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+}
+
+#howto-mobile strong {
+  color: #f0c84a;
+}
+
+#pad {
+  display: none;
+  width: 100%;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.15rem;
+  user-select: none;
+}
+
+.pad-left,
+.pad-right {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.pad-btn {
+  width: 64px;
+  height: 64px;
+  border: 3px solid #3d7a52;
+  border-radius: 14px;
+  background: rgba(20, 40, 30, 0.9);
+  color: #e8dcc8;
+  font-size: 22px;
+  font-family: inherit;
+  box-shadow: 0 4px 0 #0d1a14;
+}
+
+.pad-btn:active,
+.pad-btn.is-down {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #0d1a14;
+  background: rgba(61, 122, 82, 0.6);
+  color: #fff0c0;
+}
+
+.pad-wide {
+  width: 70px;
+}
+
+.pad-jump {
+  border-color: #e07028;
+  color: #f0c84a;
+}
+
+#shop {
+  width: 100%;
+  text-align: center;
+  background: rgba(8, 20, 14, 0.72);
+  border: 1px solid #2f5a42;
+  border-radius: 10px;
+  padding: 0.7rem 0.65rem 0.8rem;
+}
+
+.shop-main {
+  display: inline-block;
+  background: #e07028;
+  color: #1a120c;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  margin-bottom: 0.55rem;
+}
+
+.shop-heroes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem 0.7rem;
+}
+
+.shop-heroes a {
+  color: #f0e0a8;
+  font-size: 13px;
+}
+
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+  .mobile-only {
+    display: flex !important;
+  }
+
+  #howto-mobile.mobile-only {
+    display: block !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 901px) and (hover: hover) {
+  #pad {
+    display: none !important;
+  }
+}
+
+</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="frame">
+    <canvas id="game" width="384" height="216" aria-label="Faunaris Skok"></canvas>
+    <p id="howto-desktop" class="desktop-only">←→ běh · Mezerník skok · J schopnost · Esc pauza · Enter = menu</p>
+    <p id="howto-mobile" class="mobile-only">
+      <strong>Jak hrát:</strong> klepni na herní obraz nahoře.
+      Vlevo/vpravo na výběru mění hrdinu, uprostřed potvrdí.
+      Dole: ◀▶ běh · ⬆ skok · ⚡ schopnost (až sebereš power-up).
+    </p>
+    <nav id="shop" aria-label="Zpět na e-shop">
+      <a class="shop-main" href="https://www.namalujsifigurku.cz/?utm_source=hra&amp;utm_medium=github&amp;utm_campaign=faunaris-hra">Namaluj si figurku — e-shop</a>
+      <div class="shop-heroes">
+        <a href="https://www.namalujsifigurku.cz/p/kreativni-sada-lisak?utm_source=hra&amp;utm_medium=github&amp;utm_campaign=faunaris-hra">Ignis</a>
+        <a href="https://www.namalujsifigurku.cz/p/kreativni-sada-puma-gira?utm_source=hra&amp;utm_medium=github&amp;utm_campaign=faunaris-hra">Gira</a>
+        <a href="https://www.namalujsifigurku.cz/p/samostatna-figurka-k-malovani-zajic-volto?utm_source=hra&amp;utm_medium=github&amp;utm_campaign=faunaris-hra">Volto</a>
+        <a href="https://www.namalujsifigurku.cz/p/samostatna-figurka-hyena?utm_source=hra&amp;utm_medium=github&amp;utm_campaign=faunaris-hra">Hynero</a>
+      </div>
+    </nav>
+    <div id="pad" class="mobile-only" aria-label="Dotykové ovládání">
+      <div class="pad-left">
+        <button type="button" class="pad-btn" data-key="ArrowLeft" aria-label="Vlevo">◀</button>
+        <button type="button" class="pad-btn" data-key="ArrowRight" aria-label="Vpravo">▶</button>
+      </div>
+      <div class="pad-right">
+        <button type="button" class="pad-btn pad-wide" data-key="KeyJ" aria-label="Schopnost">⚡</button>
+        <button type="button" class="pad-btn pad-wide pad-jump" data-key="Space" aria-label="Skok">⬆</button>
+      </div>
+    </div>
+  </div>
+  <script>
+(() => {
+  "use strict";
+
+  const W = 384;
+  const H = 216;
+  const T = 16;
+  const GRAVITY = 0.35;
+  const MAX_FALL = 7;
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  const keys = Object.create(null);
+  addEventListener("keydown", (e) => {
+    keys[e.code] = true;
+    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+      e.preventDefault();
+    }
+    onKey(e.code, true);
+  });
+  addEventListener("keyup", (e) => {
+    keys[e.code] = false;
+  });
+
+  const CHARACTERS = [
+    {
+      id: "ignis",
+      name: "Ignis",
+      species: "lišák",
+      realm: "Liora",
+      blurb: "Ohnivý ochránce lesa. Zelená jiskra mu dá plameny.",
+      powerName: "Plamen ocasu",
+      powerItem: "Zelená jiskra",
+      colors: { body: "#e07028", accent: "#2d8a3e", eye: "#40ff70", dark: "#8a3a10" },
+      speed: 1.55,
+      jump: 6.2,
+      power: "fire",
+    },
+    {
+      id: "volto",
+      name: "Volto",
+      species: "zajíc",
+      realm: "Liora",
+      blurb: "Neřízená střela. Mrkvový krystal odemyká granáty.",
+      powerName: "Mrkvový granát",
+      powerItem: "Mrkvový krystal",
+      colors: { body: "#f0c84a", accent: "#3cb86a", eye: "#1a1a1a", dark: "#b07a18" },
+      speed: 1.75,
+      jump: 6.8,
+      power: "carrot",
+    },
+    {
+      id: "gira",
+      name: "Gira",
+      species: "puma",
+      realm: "Rockara",
+      blurb: "Strážkyně rovnováhy. Kámen rovnováhy spustí otřes.",
+      powerName: "Otřes země",
+      powerItem: "Kámen rovnováhy",
+      colors: { body: "#c9a06a", accent: "#6a8a9a", eye: "#f0e8c0", dark: "#6a4a28" },
+      speed: 1.45,
+      jump: 6.0,
+      power: "quake",
+    },
+  ];
+
+  // Tile codes: 0 empty, 1 solid, 2 platform, 3 spike, 4 spring, 5 flag, 6 lava/quicksand
+  const LEVELS = [
+    {
+      id: "liora",
+      name: "Liora — Lesní říše",
+      subtitle: "Stroje ničí stromy. Najdi zelenou jiskru!",
+      sky: ["#6eb8d8", "#9fd48a"],
+      ground: "#3d6a3a",
+      dirt: "#5a3a22",
+      accent: "#2d5a28",
+      width: 80,
+      map: buildMap(80, [
+        "................................................................................",
+        "................................................................................",
+        "................................................................................",
+        ".........................?......................................................",
+        ".....................####.......................................................",
+        ".............o..................................................................",
+        "...........####..................o.................?............................",
+        "................................####..............###...........................",
+        "......o.........................................................................",
+        "....####..............e.................e....................e..................",
+        "...................#######...........#######..............#####.................",
+        ".........e......................................................................",
+        "=======..=======.....=======...=======.....=======....=======.....=======.......",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      ], { start: [3, 11], powerAt: [24, 3], flag: [76, 11] }),
+    },
+    {
+      id: "rockara",
+      name: "Rockara — Kamenná říše",
+      subtitle: "Skály praskají. Obnov rovnováhu.",
+      sky: ["#8aa0b8", "#c8b898"],
+      ground: "#7a6a58",
+      dirt: "#4a4038",
+      accent: "#9a8a70",
+      width: 76,
+      map: buildMap(76, [
+        "............................................................................",
+        "............................................................................",
+        "............................................................................",
+        ".................?..........................................................",
+        "..............####..................o.......................................",
+        "..................................####.................?....................",
+        ".........o...........................................####...................",
+        ".......####..............e..................................................",
+        ".....................#######..............e........o........................",
+        "......................................#######....####.........e.............",
+        "....e.......................................................................",
+        "=======..========......========....========.....========....========........",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      ], { start: [2, 10], powerAt: [17, 3], flag: [72, 10] }),
+    },
+    {
+      id: "dunara",
+      name: "Dunara — Pouštní říše",
+      subtitle: "Cesta k Mechauře. Pozor na past!",
+      sky: ["#e8c878", "#d89848"],
+      ground: "#c8a060",
+      dirt: "#8a6030",
+      accent: "#e0b050",
+      width: 78,
+      map: buildMap(78, [
+        "..............................................................................",
+        "..............................................................................",
+        "..............................................................................",
+        "......................?.......................................................",
+        "...................####...............o.......................................",
+        "....................................####..............?.......................",
+        "..........o.........................................####......................",
+        "........####...........e......................................................",
+        "...................#######.............e.......o..............................",
+        "...................................#######...####..........e..................",
+        "....e........................sss..............................................",
+        "=======..========......========....========.....========....========..........",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      ], { start: [2, 10], powerAt: [22, 3], flag: [74, 10] }),
+    },
+    {
+      id: "mechaura",
+      name: "Mechaura — Strojová říše",
+      subtitle: "Hynero střeží bránu. Poraz padoucha!",
+      sky: ["#3a2848", "#1a2030"],
+      ground: "#4a5060",
+      dirt: "#2a2838",
+      accent: "#c04050",
+      width: 48,
+      boss: true,
+      map: buildMap(48, [
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "..............?.................................",
+        "............####................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "....e...........................................",
+        "=======................................=======..",
+        "dddddddddddddddddddddddddddddddddddddddddddddddd",
+      ], { start: [3, 9], powerAt: [14, 4], flag: [44, 9] }),
+    },
+  ];
+
+  function buildMap(width, rows, meta) {
+    const h = rows.length;
+    const tiles = [];
+    const enemies = [];
+    const items = [];
+    let start = { x: 2 * T, y: 8 * T };
+    let flag = { x: (width - 3) * T, y: 8 * T };
+    let power = null;
+
+    for (let y = 0; y < h; y++) {
+      const row = rows[y].padEnd(width, ".").slice(0, width);
+      const line = [];
+      for (let x = 0; x < width; x++) {
+        const c = row[x];
+        if (c === "=" || c === "#") line.push(1);
+        else if (c === "d") line.push(1);
+        else if (c === "s") line.push(6);
+        else if (c === "?") {
+          line.push(0);
+          items.push({ type: "block", x: x * T, y: y * T, used: false });
+        } else if (c === "o") {
+          line.push(0);
+          items.push({ type: "crystal", x: x * T + 4, y: y * T + 4, taken: false });
+        } else if (c === "e") {
+          line.push(0);
+          enemies.push({ kind: "drone", x: x * T, y: y * T, vx: -0.6, alive: true });
+        } else line.push(0);
+      }
+      tiles.push(line);
+    }
+
+    if (meta.start) start = { x: meta.start[0] * T, y: meta.start[1] * T };
+    if (meta.flag) flag = { x: meta.flag[0] * T, y: meta.flag[1] * T };
+    if (meta.powerAt) {
+      power = {
+        type: "power",
+        x: meta.powerAt[0] * T + 2,
+        y: meta.powerAt[1] * T + 2,
+        taken: false,
+        revealed: false,
+      };
+      items.push(power);
+    }
+
+    return { tiles, enemies, items, start, flag, h, w: width };
+  }
+
+  const state = {
+    mode: "title", // title | select | play | pause | dead | win | story
+    charIndex: 0,
+    levelIndex: 0,
+    player: null,
+    level: null,
+    camX: 0,
+    crystals: 0,
+    lives: 3,
+    flash: 0,
+    msg: "",
+    msgT: 0,
+    projectiles: [],
+    boss: null,
+    anim: 0,
+    selectBlink: 0,
+    storyLines: [],
+    storyI: 0,
+    storyT: 0,
+    shake: 0,
+    wonAll: false,
+  };
+
+  function makePlayer(ch) {
+    return {
+      ch,
+      x: 32,
+      y: 32,
+      w: 12,
+      h: 14,
+      vx: 0,
+      vy: 0,
+      facing: 1,
+      onGround: false,
+      powered: false,
+      invuln: 0,
+      cooldown: 0,
+      big: false,
+      dead: false,
+      win: false,
+    };
+  }
+
+  function loadLevel(i) {
+    state.levelIndex = i;
+    const def = LEVELS[i];
+    const map = JSON.parse(JSON.stringify(def.map));
+    state.level = { ...def, ...map, enemies: map.enemies.map((e) => ({ ...e })), items: map.items.map((it) => ({ ...it })) };
+    const p = makePlayer(CHARACTERS[state.charIndex]);
+    p.x = map.start.x;
+    p.y = map.start.y;
+    state.player = p;
+    state.projectiles = [];
+    state.camX = 0;
+    state.flash = 0;
+    state.msg = def.subtitle;
+    state.msgT = 180;
+    state.boss = null;
+    if (def.boss) {
+      state.boss = {
+        x: 28 * T,
+        y: 8 * T,
+        w: 22,
+        h: 22,
+        vx: -0.8,
+        hp: 6,
+        maxHp: 6,
+        cooldown: 0,
+        alive: true,
+        phase: 0,
+      };
+    }
+  }
+
+  function startStoryThenPlay() {
+    const ch = CHARACTERS[state.charIndex];
+    state.storyLines = [
+      `Vybral(a) sis: ${ch.name} — ${ch.species} z říše ${ch.realm}.`,
+      "Faunaris má osm říší. Rovnováha se hroutí.",
+      "Stroje z Mechaury pustoší svět. Hynero střeží bránu.",
+      `${ch.powerItem} ti dá schopnost: ${ch.powerName}.`,
+      "Zachraň říše. Skákej. Sbírej. Poraz Hynera!",
+    ];
+    state.storyI = 0;
+    state.storyT = 0;
+    state.mode = "story";
+  }
+
+  function beginGame() {
+    state.crystals = 0;
+    state.lives = 3;
+    state.wonAll = false;
+    loadLevel(0);
+    state.mode = "play";
+  }
+
+  function onKey(code, down) {
+    if (!down) return;
+    if (state.mode === "title" && (code === "Enter" || code === "Space")) {
+      state.mode = "select";
+      return;
+    }
+    if (state.mode === "select") {
+      if (code === "ArrowLeft" || code === "KeyA") state.charIndex = (state.charIndex + 2) % 3;
+      if (code === "ArrowRight" || code === "KeyD") state.charIndex = (state.charIndex + 1) % 3;
+      if (code === "Enter" || code === "Space") startStoryThenPlay();
+      return;
+    }
+    if (state.mode === "story") {
+      if (code === "Enter" || code === "Space") {
+        state.storyI++;
+        if (state.storyI >= state.storyLines.length) beginGame();
+        else state.storyT = 0;
+      }
+      return;
+    }
+    if (state.mode === "play" && code === "Escape") {
+      state.mode = "pause";
+      return;
+    }
+    if (state.mode === "pause" && (code === "Escape" || code === "Enter")) {
+      state.mode = "play";
+      return;
+    }
+    if ((state.mode === "dead" || state.mode === "win") && (code === "Enter" || code === "Space")) {
+      if (state.mode === "win" && state.wonAll) {
+        state.mode = "title";
+        return;
+      }
+      if (state.mode === "win") {
+        loadLevel(state.levelIndex);
+        state.mode = "play";
+        return;
+      }
+      if (state.lives > 0) {
+        loadLevel(state.levelIndex);
+        state.mode = "play";
+      } else {
+        state.mode = "title";
+      }
+    }
+  }
+
+  function tileAt(tx, ty) {
+    const L = state.level;
+    if (ty < 0 || tx < 0 || tx >= L.w || ty >= L.h) return 1;
+    return L.tiles[ty][tx];
+  }
+
+  function solidAt(px, py, pw, ph) {
+    const x0 = Math.floor(px / T);
+    const y0 = Math.floor(py / T);
+    const x1 = Math.floor((px + pw - 0.01) / T);
+    const y1 = Math.floor((py + ph - 0.01) / T);
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const t = tileAt(x, y);
+        if (t === 1 || t === 6) return t;
+      }
+    }
+    return 0;
+  }
+
+  function rects(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  function updatePlay() {
+    const p = state.player;
+    const L = state.level;
+    state.anim++;
+    if (state.msgT > 0) state.msgT--;
+    if (state.flash > 0) state.flash--;
+    if (state.shake > 0) state.shake--;
+    if (p.invuln > 0) p.invuln--;
+    if (p.cooldown > 0) p.cooldown--;
+
+    const left = keys.ArrowLeft || keys.KeyA;
+    const right = keys.ArrowRight || keys.KeyD;
+    const jump = keys.Space || keys.ArrowUp || keys.KeyW;
+    const ability = keys.KeyJ || keys.KeyX;
+
+    const spd = p.ch.speed * (p.powered ? 1.15 : 1);
+    if (left) {
+      p.vx = -spd * 1.6;
+      p.facing = -1;
+    } else if (right) {
+      p.vx = spd * 1.6;
+      p.facing = 1;
+    } else {
+      p.vx *= 0.75;
+      if (Math.abs(p.vx) < 0.05) p.vx = 0;
+    }
+
+    if (jump && p.onGround) {
+      p.vy = -p.ch.jump * (p.powered ? 1.08 : 1);
+      p.onGround = false;
+    }
+
+    if (ability && p.powered && p.cooldown <= 0) {
+      usePower(p);
+    }
+
+    p.vy = Math.min(MAX_FALL, p.vy + GRAVITY);
+    moveAxis(p, p.vx, 0);
+    p.onGround = false;
+    moveAxis(p, 0, p.vy);
+
+    // hazard sand
+    if (solidAt(p.x + 2, p.y + p.h - 2, p.w - 4, 2) === 6) {
+      p.vx *= 0.5;
+      hurt(p, false);
+    }
+
+    // items
+    for (const it of L.items) {
+      if (it.taken) continue;
+      if (it.type === "crystal") {
+        if (rects(p, { x: it.x, y: it.y, w: 8, h: 8 })) {
+          it.taken = true;
+          state.crystals++;
+          toast("+1 krystal říše");
+        }
+      } else if (it.type === "power" && it.revealed && !it.taken) {
+        if (rects(p, { x: it.x, y: it.y, w: 12, h: 12 })) {
+          it.taken = true;
+          p.powered = true;
+          p.big = true;
+          p.h = 16;
+          p.invuln = 40;
+          state.flash = 20;
+          toast(`${p.ch.powerItem}! Schopnost: ${p.ch.powerName}`);
+        }
+      } else if (it.type === "block" && !it.used) {
+        const hit =
+          p.vy < 0 &&
+          p.x + p.w > it.x &&
+          p.x < it.x + T &&
+          p.y < it.y + T &&
+          p.y + p.h > it.y + T - 4;
+        if (hit) {
+          it.used = true;
+          p.vy = 0;
+          // reveal nearest power or spawn crystal
+          const power = L.items.find((x) => x.type === "power" && !x.revealed);
+          if (power) {
+            power.revealed = true;
+            power.x = it.x + 2;
+            power.y = it.y - 14;
+            toast(`${p.ch.powerItem} se objevila!`);
+          } else {
+            L.items.push({ type: "crystal", x: it.x + 4, y: it.y - 12, taken: false });
+          }
+        }
+      }
+    }
+
+    // enemies
+    for (const e of L.enemies) {
+      if (!e.alive) continue;
+      e.x += e.vx;
+      if (solidAt(e.x + (e.vx > 0 ? 14 : 0), e.y, 2, 14) === 1) e.vx *= -1;
+      if (e.y + 16 < L.h * T && solidAt(e.x + (e.vx > 0 ? 14 : 0), e.y + 16, 2, 2) !== 1) e.vx *= -1;
+
+      const eb = { x: e.x, y: e.y, w: 14, h: 14 };
+      if (!rects(p, eb)) continue;
+      if (p.vy > 0 && p.y + p.h - e.y < 10) {
+        e.alive = false;
+        p.vy = -4.5;
+        state.crystals++;
+        toast("Stroj odstaven!");
+      } else {
+        hurt(p, true);
+      }
+    }
+
+    // projectiles
+    for (const pr of state.projectiles) {
+      if (!pr.alive) continue;
+      if (pr.kind === "carrot") pr.vy += 0.18;
+      pr.x += pr.vx;
+      pr.y += pr.vy;
+      pr.life--;
+      if (pr.life <= 0 || solidAt(pr.x, pr.y, pr.w, pr.h) === 1) pr.alive = false;
+      for (const e of L.enemies) {
+        if (!e.alive) continue;
+        if (rects(pr, { x: e.x, y: e.y, w: 14, h: 14 })) {
+          e.alive = false;
+          pr.alive = false;
+          state.crystals++;
+        }
+      }
+      if (state.boss && state.boss.alive && rects(pr, state.boss)) {
+        state.boss.hp--;
+        pr.alive = false;
+        state.flash = 8;
+        if (state.boss.hp <= 0) {
+          state.boss.alive = false;
+          toast("Hynero poražen!");
+          setTimeout(() => finishLevel(), 600);
+        }
+      }
+    }
+    state.projectiles = state.projectiles.filter((pr) => pr.alive);
+
+    // boss
+    if (state.boss && state.boss.alive) {
+      const b = state.boss;
+      b.phase++;
+      b.x += b.vx;
+      if (b.x < 10 * T || b.x > 36 * T) b.vx *= -1;
+      if (b.phase % 90 === 0) {
+        L.enemies.push({
+          kind: "drone",
+          x: b.x,
+          y: b.y + 8,
+          vx: p.x < b.x ? -1.1 : 1.1,
+          alive: true,
+        });
+      }
+      if (rects(p, b)) {
+        if (p.vy > 0 && p.y + p.h - b.y < 12) {
+          b.hp--;
+          p.vy = -5;
+          state.shake = 10;
+          if (b.hp <= 0) {
+            b.alive = false;
+            toast("Hynero poražen!");
+            setTimeout(() => finishLevel(), 600);
+          }
+        } else hurt(p, true);
+      }
+    }
+
+    // flag / goal
+    const f = L.flag;
+    if (rects(p, { x: f.x, y: f.y - 24, w: 10, h: 40 }) && (!L.boss || (state.boss && !state.boss.alive))) {
+      finishLevel();
+    }
+
+    // camera
+    state.camX = Math.max(0, Math.min(p.x - W * 0.4, L.w * T - W));
+
+    // fall death
+    if (p.y > L.h * T + 40) hurt(p, true, true);
+  }
+
+  function moveAxis(p, dx, dy) {
+    p.x += dx;
+    p.y += dy;
+    const hit = solidAt(p.x, p.y, p.w, p.h);
+    if (!hit) return;
+    if (dx > 0) p.x = Math.floor((p.x + p.w) / T) * T - p.w - 0.01;
+    if (dx < 0) p.x = Math.floor(p.x / T) * T + T;
+    if (dy > 0) {
+      p.y = Math.floor((p.y + p.h) / T) * T - p.h - 0.01;
+      p.vy = 0;
+      p.onGround = true;
+    }
+    if (dy < 0) {
+      p.y = Math.floor(p.y / T) * T + T;
+      p.vy = 0;
+    }
+  }
+
+  function usePower(p) {
+    p.cooldown = 28;
+    if (p.ch.power === "fire") {
+      state.projectiles.push({
+        x: p.x + (p.facing > 0 ? p.w : -8),
+        y: p.y + 4,
+        w: 8,
+        h: 6,
+        vx: p.facing * 3.2,
+        vy: 0,
+        life: 50,
+        alive: true,
+        kind: "fire",
+      });
+    } else if (p.ch.power === "carrot") {
+      state.projectiles.push({
+        x: p.x + (p.facing > 0 ? p.w : -8),
+        y: p.y + 2,
+        w: 8,
+        h: 8,
+        vx: p.facing * 2.4,
+        vy: -2.2,
+        life: 70,
+        alive: true,
+        kind: "carrot",
+      });
+    } else if (p.ch.power === "quake") {
+      state.shake = 18;
+      state.flash = 10;
+      for (const e of state.level.enemies) {
+        if (!e.alive) continue;
+        if (Math.abs(e.x - p.x) < 70 && Math.abs(e.y - p.y) < 40) {
+          e.alive = false;
+          state.crystals++;
+        }
+      }
+      if (state.boss && state.boss.alive && Math.abs(state.boss.x - p.x) < 80) {
+        state.boss.hp--;
+        if (state.boss.hp <= 0) {
+          state.boss.alive = false;
+          toast("Hynero poražen!");
+          setTimeout(() => finishLevel(), 600);
+        }
+      }
+      toast("Otřes Rockary!");
+    }
+  }
+
+  function hurt(p, knock, fatal) {
+    if (p.invuln > 0 && !fatal) return;
+    if (p.powered && !fatal) {
+      p.powered = false;
+      p.big = false;
+      p.h = 14;
+      p.invuln = 90;
+      p.vy = -3.5;
+      p.vx = -p.facing * 2;
+      toast("Síla vyprchala!");
+      return;
+    }
+    state.lives--;
+    p.invuln = 60;
+    if (state.lives <= 0 || fatal) {
+      state.mode = "dead";
+      state.msg = state.lives <= 0 ? "Faunaris potřebuje hrdiny znovu…" : "Pád do prázdna!";
+      return;
+    }
+    loadLevel(state.levelIndex);
+    toast("Zbývá životů: " + state.lives);
+  }
+
+  function finishLevel() {
+    if (state.mode !== "play") return;
+    if (state.levelIndex >= LEVELS.length - 1) {
+      state.wonAll = true;
+      state.mode = "win";
+      state.msg = "Říše jsou v bezpečí! Trojice zvítězila.";
+      return;
+    }
+    state.levelIndex++;
+    loadLevel(state.levelIndex);
+    toast("Další říše: " + state.level.name);
+  }
+
+  function toast(t) {
+    state.msg = t;
+    state.msgT = 120;
+  }
+
+  // ——— DRAW ———
+  function draw() {
+    const shakeX = state.shake ? (Math.random() - 0.5) * state.shake : 0;
+    const shakeY = state.shake ? (Math.random() - 0.5) * state.shake : 0;
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+
+    if (state.mode === "title") drawTitle();
+    else if (state.mode === "select") drawSelect();
+    else if (state.mode === "story") drawStory();
+    else {
+      drawWorld();
+      if (state.mode === "pause") drawOverlay("PAUZA", "Enter = pokračovat");
+      if (state.mode === "dead") drawOverlay("KONEC BĚHU", "Enter = znovu / menu");
+      if (state.mode === "win") drawOverlay(state.wonAll ? "VÍTĚZSTVÍ FAUNARIS" : "ŘÍŠE DOBYTA", "Dole: figurky na e-shopu");
+    }
+    ctx.restore();
+  }
+
+  function drawTitle() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#7ec8e8");
+    g.addColorStop(0.55, "#4a8a5a");
+    g.addColorStop(1, "#1a3a2a");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    // trees silhouettes
+    for (let i = 0; i < 12; i++) {
+      const x = i * 34 + 8;
+      ctx.fillStyle = "#143224";
+      ctx.fillRect(x + 6, 120, 6, 96);
+      ctx.fillStyle = "#1e4a32";
+      ctx.beginPath();
+      ctx.moveTo(x - 8, 130);
+      ctx.lineTo(x + 10, 70 + (i % 3) * 8);
+      ctx.lineTo(x + 28, 130);
+      ctx.fill();
+    }
+    pixelText("FAUNARIS SKOK", W / 2, 48, "#f0e0a8", 2, true);
+    pixelText("Namaluj si figurku", W / 2, 72, "#8fad96", 1, true);
+    pixelText("Pixelové dobrodružství osmi říší", W / 2, 96, "#c8d8c0", 1, true);
+    state.selectBlink++;
+    if (Math.floor(state.selectBlink / 30) % 2 === 0) {
+      pixelText("Stiskni ENTER", W / 2, 160, "#e07028", 1, true);
+    }
+    drawMiniHero(W / 2 - 40, 118, CHARACTERS[0], 1);
+    drawMiniHero(W / 2 - 8, 118, CHARACTERS[1], 1);
+    drawMiniHero(W / 2 + 24, 118, CHARACTERS[2], 1);
+  }
+
+  function drawSelect() {
+    ctx.fillStyle = "#101c18";
+    ctx.fillRect(0, 0, W, H);
+    pixelText("VYBER HRDINU", W / 2, 20, "#f0e0a8", 1, true);
+    pixelText("← → nebo klepni vlevo/vpravo", W / 2, 36, "#6a8a72", 1, true);
+    CHARACTERS.forEach((ch, i) => {
+      const x = 40 + i * 110;
+      const y = 58;
+      const sel = i === state.charIndex;
+      ctx.fillStyle = sel ? "#2a4a38" : "#182820";
+      ctx.fillRect(x - 8, y - 8, 96, 130);
+      ctx.strokeStyle = sel ? "#e07028" : "#3a5a48";
+      ctx.strokeRect(x - 8 + 0.5, y - 8 + 0.5, 95, 129);
+      drawMiniHero(x + 32, y + 36, ch, 2);
+      pixelText(ch.name, x + 40, y + 70, sel ? "#fff0c0" : "#a0b8a8", 1, true);
+      pixelText(ch.realm, x + 40, y + 84, "#7a9a82", 1, true);
+    });
+    const ch = CHARACTERS[state.charIndex];
+    wrapText(ch.blurb, 24, 198, W - 48, "#c8d8c0");
+  }
+
+  function drawStory() {
+    ctx.fillStyle = "#0c1410";
+    ctx.fillRect(0, 0, W, H);
+    pixelText("PŘÍBĚH FAUNARIS", W / 2, 28, "#e07028", 1, true);
+    wrapText(state.storyLines[state.storyI], 28, 90, W - 56, "#e8dcc8");
+    pixelText("ENTER — dál", W / 2, 190, "#6a8a72", 1, true);
+  }
+
+  function drawWorld() {
+    const L = state.level;
+    const cam = state.camX;
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, L.sky[0]);
+    sky.addColorStop(1, L.sky[1]);
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    // parallax decor
+    ctx.fillStyle = "rgba(0,0,0,0.08)";
+    for (let i = 0; i < 8; i++) {
+      const x = ((i * 70 - cam * 0.3) % (W + 40)) - 20;
+      ctx.fillRect(x, 40 + (i % 3) * 10, 30, 80);
+    }
+
+    // tiles
+    const x0 = Math.floor(cam / T);
+    const x1 = Math.min(L.w, x0 + Math.ceil(W / T) + 1);
+    for (let y = 0; y < L.h; y++) {
+      for (let x = x0; x < x1; x++) {
+        const t = L.tiles[y][x];
+        if (!t) continue;
+        const px = x * T - cam;
+        const py = y * T;
+        if (t === 1) {
+          ctx.fillStyle = L.ground;
+          ctx.fillRect(px, py, T, T);
+          ctx.fillStyle = L.dirt;
+          ctx.fillRect(px, py + 10, T, 6);
+          ctx.fillStyle = L.accent;
+          ctx.fillRect(px + 2, py + 2, 3, 3);
+        } else if (t === 6) {
+          ctx.fillStyle = "#c8a050";
+          ctx.fillRect(px, py, T, T);
+          ctx.fillStyle = "#a87830";
+          ctx.fillRect(px, py + 4, T, 4);
+        }
+      }
+    }
+
+    // flag
+    const f = L.flag;
+    ctx.fillStyle = "#ddd";
+    ctx.fillRect(f.x - cam + 4, f.y - 28, 2, 28);
+    ctx.fillStyle = "#e07028";
+    ctx.beginPath();
+    ctx.moveTo(f.x - cam + 6, f.y - 28);
+    ctx.lineTo(f.x - cam + 18, f.y - 22);
+    ctx.lineTo(f.x - cam + 6, f.y - 16);
+    ctx.fill();
+
+    // items
+    for (const it of L.items) {
+      if (it.type === "block") {
+        ctx.fillStyle = it.used ? "#5a4a38" : "#d8a830";
+        ctx.fillRect(it.x - cam, it.y, T, T);
+        if (!it.used) {
+          ctx.fillStyle = "#fff0a0";
+          pixelText("?", it.x - cam + 8, it.y + 11, "#4a3010", 1, true);
+        }
+      } else if (it.type === "crystal" && !it.taken) {
+        ctx.fillStyle = "#60e0ff";
+        ctx.fillRect(it.x - cam, it.y, 8, 8);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(it.x - cam + 2, it.y + 2, 2, 2);
+      } else if (it.type === "power" && it.revealed && !it.taken) {
+        const bob = Math.sin(state.anim * 0.15) * 2;
+        drawPowerItem(it.x - cam, it.y + bob, state.player.ch);
+      }
+    }
+
+    // enemies
+    for (const e of L.enemies) {
+      if (!e.alive) continue;
+      drawDrone(e.x - cam, e.y);
+    }
+
+    // boss
+    if (state.boss && state.boss.alive) {
+      drawHynero(state.boss.x - cam, state.boss.y);
+      // HP bar
+      ctx.fillStyle = "#200";
+      ctx.fillRect(W / 2 - 40, 8, 80, 6);
+      ctx.fillStyle = "#c04050";
+      ctx.fillRect(W / 2 - 40, 8, 80 * (state.boss.hp / state.boss.maxHp), 6);
+      pixelText("HYNERO", W / 2, 22, "#f0a0a0", 1, true);
+    }
+
+    // projectiles
+    for (const pr of state.projectiles) {
+      if (pr.kind === "fire") {
+        ctx.fillStyle = "#ff6020";
+        ctx.fillRect(pr.x - cam, pr.y, pr.w, pr.h);
+        ctx.fillStyle = "#ffe080";
+        ctx.fillRect(pr.x - cam + 2, pr.y + 1, 3, 3);
+      } else {
+        ctx.fillStyle = "#f08030";
+        ctx.fillRect(pr.x - cam, pr.y, pr.w, pr.h);
+        ctx.fillStyle = "#40a050";
+        ctx.fillRect(pr.x - cam + 5, pr.y, 3, 4);
+      }
+    }
+
+    // player
+    const p = state.player;
+    if (p.invuln === 0 || Math.floor(state.anim / 3) % 2 === 0) {
+      drawHero(p.x - cam, p.y, p.ch, p.facing, p.powered);
+    }
+
+    // HUD
+    ctx.fillStyle = "rgba(8,16,12,0.55)";
+    ctx.fillRect(0, 0, W, 18);
+    pixelText(p.ch.name, 6, 12, "#f0e0a8", 1, false);
+    pixelText(`❤${state.lives}`, 70, 12, "#e07070", 1, false);
+    pixelText(`◆${state.crystals}`, 110, 12, "#60e0ff", 1, false);
+    pixelText(L.name, 150, 12, "#a8c8b0", 1, false);
+    if (p.powered) pixelText(p.ch.powerName, W - 6, 12, "#ffe080", 1, false, true);
+
+    if (state.msgT > 0) {
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillRect(20, H - 28, W - 40, 18);
+      pixelText(state.msg, W / 2, H - 16, "#fff8e0", 1, true);
+    }
+
+    if (state.flash > 0) {
+      ctx.fillStyle = `rgba(255,240,180,${state.flash / 40})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function drawOverlay(title, sub) {
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.fillRect(0, 0, W, H);
+    pixelText(title, W / 2, H / 2 - 10, "#f0e0a8", 1, true);
+    pixelText(sub, W / 2, H / 2 + 12, "#a8c8b0", 1, true);
+  }
+
+  function drawPowerItem(x, y, ch) {
+    if (ch.power === "fire") {
+      ctx.fillStyle = "#40ff70";
+      ctx.fillRect(x, y, 12, 12);
+      ctx.fillStyle = "#e07028";
+      ctx.fillRect(x + 3, y + 3, 6, 6);
+    } else if (ch.power === "carrot") {
+      ctx.fillStyle = "#f08030";
+      ctx.fillRect(x + 2, y, 8, 12);
+      ctx.fillStyle = "#40a050";
+      ctx.fillRect(x + 3, y - 2, 6, 4);
+    } else {
+      ctx.fillStyle = "#a0b0c0";
+      ctx.fillRect(x, y, 12, 12);
+      ctx.fillStyle = "#6080a0";
+      ctx.fillRect(x + 3, y + 3, 6, 6);
+    }
+  }
+
+  function drawDrone(x, y) {
+    ctx.fillStyle = "#6a7080";
+    ctx.fillRect(x, y + 4, 14, 10);
+    ctx.fillStyle = "#c04050";
+    ctx.fillRect(x + 3, y + 6, 3, 3);
+    ctx.fillRect(x + 8, y + 6, 3, 3);
+    ctx.fillStyle = "#303848";
+    ctx.fillRect(x + 2, y, 4, 4);
+    ctx.fillRect(x + 8, y, 4, 4);
+  }
+
+  function drawHynero(x, y) {
+    ctx.fillStyle = "#5a4838";
+    ctx.fillRect(x, y + 4, 22, 18);
+    ctx.fillStyle = "#c04050";
+    ctx.fillRect(x + 4, y + 8, 4, 4);
+    ctx.fillRect(x + 14, y + 8, 4, 4);
+    ctx.fillStyle = "#8a9aa8";
+    ctx.fillRect(x + 8, y, 6, 6);
+    ctx.fillRect(x - 2, y + 6, 4, 8);
+    ctx.fillRect(x + 20, y + 6, 4, 8);
+  }
+
+  function drawHero(x, y, ch, facing, powered) {
+    const c = ch.colors;
+    const s = powered ? 1 : 1;
+    ctx.save();
+    if (facing < 0) {
+      ctx.translate(x + 12 * s, y);
+      ctx.scale(-1, 1);
+      x = 0;
+      y = 0;
+    }
+    // body
+    ctx.fillStyle = c.body;
+    ctx.fillRect(x + 2, y + 4, 10, 10);
+    // head
+    ctx.fillRect(x + 3, y, 8, 6);
+    // ear / feature
+    if (ch.id === "ignis") {
+      ctx.fillStyle = c.accent;
+      ctx.fillRect(x + 12, y + 8, 6, 4);
+      ctx.fillStyle = "#ff6020";
+      ctx.fillRect(x + 16, y + 7, 4, 6);
+    } else if (ch.id === "volto") {
+      ctx.fillStyle = c.dark;
+      ctx.fillRect(x + 4, y - 3, 2, 4);
+      ctx.fillRect(x + 8, y - 3, 2, 4);
+    } else {
+      ctx.fillStyle = c.dark;
+      ctx.fillRect(x + 1, y - 1, 3, 3);
+      ctx.fillRect(x + 9, y - 1, 3, 3);
+    }
+    ctx.fillStyle = c.eye;
+    ctx.fillRect(x + 8, y + 2, 2, 2);
+    ctx.fillStyle = c.dark;
+    ctx.fillRect(x + 3, y + 14, 3, 2);
+    ctx.fillRect(x + 8, y + 14, 3, 2);
+    if (powered) {
+      ctx.strokeStyle = "#fff8a0";
+      ctx.strokeRect(x + 1.5, y - 1.5, 13, 17);
+    }
+    ctx.restore();
+  }
+
+  function drawMiniHero(x, y, ch, scale) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    drawHero(-6, -8, ch, 1, false);
+    ctx.restore();
+  }
+
+  function pixelText(text, x, y, color, scale, center, right) {
+    ctx.save();
+    ctx.font = `${8 * scale}px "Press Start 2P", monospace`;
+    ctx.fillStyle = color;
+    ctx.textBaseline = "middle";
+    ctx.textAlign = center ? "center" : right ? "right" : "left";
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  function wrapText(text, x, y, maxW, color) {
+    const words = text.split(" ");
+    let line = "";
+    let yy = y;
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = color;
+    ctx.textAlign = "left";
+    for (const w of words) {
+      const test = line ? line + " " + w : w;
+      if (ctx.measureText(test).width > maxW) {
+        ctx.fillText(line, x, yy);
+        line = w;
+        yy += 14;
+      } else line = test;
+    }
+    if (line) ctx.fillText(line, x, yy);
+  }
+
+  function loop() {
+    if (state.mode === "play") updatePlay();
+    if (state.mode === "story") {
+      state.storyT++;
+      if (state.storyT > 320) {
+        state.storyI++;
+        state.storyT = 0;
+        if (state.storyI >= state.storyLines.length) beginGame();
+      }
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // Menu / jump: tap canvas
+  canvas.addEventListener("pointerdown", (e) => {
+    if (state.mode === "play") {
+      onKey("Space", true);
+      return;
+    }
+    if (state.mode === "pause") return;
+    e.preventDefault();
+    if (state.mode === "title") state.mode = "select";
+    else if (state.mode === "select") {
+      const rect = canvas.getBoundingClientRect();
+      const rx = (e.clientX - rect.left) / Math.max(1, rect.width);
+      if (rx < 0.28) state.charIndex = (state.charIndex + 2) % 3;
+      else if (rx > 0.72) state.charIndex = (state.charIndex + 1) % 3;
+      else startStoryThenPlay();
+    } else if (state.mode === "story") {
+      state.storyI++;
+      if (state.storyI >= state.storyLines.length) beginGame();
+    } else if (state.mode === "dead" || state.mode === "win") {
+      onKey("Enter", true);
+    }
+  });
+
+  function bindPad() {
+    const pad = document.getElementById("pad");
+    if (!pad) return;
+    const setKey = (code, down, btn) => {
+      keys[code] = down;
+      if (btn) btn.classList.toggle("is-down", down);
+      if (down) onKey(code, true);
+    };
+    pad.querySelectorAll(".pad-btn").forEach((btn) => {
+      const code = btn.getAttribute("data-key");
+      const start = (ev) => {
+        ev.preventDefault();
+        setKey(code, true, btn);
+      };
+      const end = (ev) => {
+        ev.preventDefault();
+        setKey(code, false, btn);
+      };
+      btn.addEventListener("pointerdown", start);
+      btn.addEventListener("pointerup", end);
+      btn.addEventListener("pointercancel", end);
+      btn.addEventListener("pointerleave", end);
+    });
+  }
+  bindPad();
+
+  function fitCanvas() {
+    const cssW = Math.min(window.innerWidth - 16, 720);
+    const cssH = Math.round((cssW * H) / W);
+    canvas.style.width = cssW + "px";
+    canvas.style.height = cssH + "px";
+  }
+  fitCanvas();
+  addEventListener("resize", fitCanvas);
+  addEventListener("orientationchange", fitCanvas);
+
+  loop();
+})();
+
+</script>
+</body>
+</html>
