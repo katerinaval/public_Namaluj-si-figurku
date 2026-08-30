@@ -195,12 +195,12 @@ body {
 <body>
   <div id="frame">
     <canvas id="game" width="384" height="216" aria-label="Skok do Faunaris"></canvas>
-    <p id="howto-desktop" class="desktop-only">←→ běh · Mezerník skok · J schopnost · Esc pauza · Enter = menu · ? zespodu hlavou</p>
+    <p id="howto-desktop" class="desktop-only">←→ běh · Mezerník skok · J schopnost · Esc pauza · Enter = menu · ? zespodu hlavou i doskokem</p>
     <p id="howto-mobile" class="mobile-only">
       <strong>Jak hrát:</strong> klepni na herní obraz nahoře.
       Vlevo/vpravo na výběru mění hrdinu, uprostřed potvrdí.
       Dole: ◀▶ běh · ⬆ skok · ⚡ schopnost.
-      Žluté <strong>?</strong> trefil zespodu hlavou (stojí ve vzduchu nad plošinkou).
+      Žluté <strong>?</strong> visí ve vzduchu: trefil zespodu hlavou, z vedlejší plošinky na ně i doskočíš.
     </p>
     <nav id="shop" aria-label="Zpět na e-shop">
       <a class="shop-main" href="https://www.namalujsifigurku.cz/?utm_source=hra&amp;utm_medium=github&amp;utm_campaign=faunaris-hra">Namaluj si figurku — e-shop</a>
@@ -259,7 +259,7 @@ body {
       powerItem: "Zelená jiskra",
       colors: { body: "#e07028", accent: "#2d8a3e", eye: "#40ff70", dark: "#8a3a10" },
       speed: 1.55,
-      jump: 6.2,
+      jump: 6.5,
       power: "fire",
     },
     {
@@ -284,13 +284,13 @@ body {
       powerName: "Otřes země",
       powerItem: "Kámen rovnováhy",
       colors: { body: "#c9a06a", accent: "#6a8a9a", eye: "#f0e8c0", dark: "#6a4a28" },
-      speed: 1.45,
-      jump: 6.0,
+      speed: 1.5,
+      jump: 6.5,
       power: "quake",
     },
   ];
 
-  // Tile codes: 0 empty, 1 solid, 2 platform, 3 spike, 4 spring, 5 flag, 6 lava/quicksand
+  // Tile codes: 0 empty, 1 solid, 6 lava/quicksand, 7 mystery box (solid, bump from below)
   const LEVELS = [
     {
       id: "liora",
@@ -300,23 +300,20 @@ body {
       ground: "#3d6a3a",
       dirt: "#5a3a22",
       accent: "#2d5a28",
-      width: 80,
-      map: buildMap(80, [
-        "................................................................................",
-        "................................................................................",
-        ".........................?......................................................",
-        "................................................................................",
-        ".....................####.......................................................",
-        ".............o...................................?..............................",
-        "...........####.................................................................",
-        "................................####..............###...........................",
-        "......o.........................................................................",
-        "....####..............e.................e....................e..................",
-        "...................#######...........#######..............#####.................",
-        ".........e......................................................................",
-        "=======..=======.....=======...=======.....=======....=======.....=======.......",
-        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-      ], { start: [3, 11], powerAt: [24, 2], flag: [76, 11] }),
+      width: 56,
+      map: buildMap(56, [
+        "........................................................",
+        "........................................................",
+        "........?#..........?#..........?#......................",
+        "........................................................",
+        "..............o...........o.............................",
+        "......####..####..####..####..####..####................",
+        "..................o.......................o.............",
+        "....####..####..####..####..####..####..####............",
+        "..####................e...........e...........e.........",
+        "=======..=======..=======..=======..=======..===========",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      ], { start: [2, 8], powerAt: [8, 2], flag: [53, 8] }),
     },
     {
       id: "rockara",
@@ -326,22 +323,20 @@ body {
       ground: "#7a6a58",
       dirt: "#4a4038",
       accent: "#9a8a70",
-      width: 76,
-      map: buildMap(76, [
-        "............................................................................",
-        "............................................................................",
-        ".................?..........................................................",
-        "............................................................................",
-        "..............####..................o.......................................",
-        "..................................####......................................",
-        ".........o...........................................?.....................",
-        ".......####..........................................####...................",
-        ".....................#######..............e........o........................",
-        "......................................#######....####.........e.............",
-        "....e.......................................................................",
-        "=======..========......========....========.....========....========........",
-        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-      ], { start: [2, 10], powerAt: [17, 2], flag: [72, 10] }),
+      width: 56,
+      map: buildMap(56, [
+        "........................................................",
+        "........................................................",
+        "..........?#..........?#..........?#....................",
+        "........................................................",
+        "................o...........o...........................",
+        "........####..####..####..####..####..####..............",
+        "....................o.....................o.............",
+        "......####..####..####..####..####..####..####..........",
+        "....####..............e...........e.........e...........",
+        "=======..=======..=======..=======..=======..===========",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      ], { start: [2, 8], powerAt: [10, 2], flag: [53, 8] }),
     },
     {
       id: "mechaura",
@@ -351,22 +346,21 @@ body {
       ground: "#4a5060",
       dirt: "#2a2838",
       accent: "#c04050",
-      width: 48,
+      width: 56,
       boss: true,
-      map: buildMap(48, [
-        "................................................",
-        "................................................",
-        "..............?.................................",
-        "................................................",
-        "............####................................",
-        "................................................",
-        "................................................",
-        "................................................",
-        "................................................",
-        "....e...........................................",
-        "=======................................=======..",
-        "dddddddddddddddddddddddddddddddddddddddddddddddd",
-      ], { start: [3, 9], powerAt: [14, 2], flag: [44, 9] }),
+      map: buildMap(56, [
+        "........................................................",
+        "........................................................",
+        "........?#..........?#..........?#......................",
+        "........................................................",
+        "..............o...........o.............................",
+        "......####..####..####..####..####..####................",
+        "........................................................",
+        "....####..####..####..####..####..####..####............",
+        "..####..................e...............................",
+        "=======..=======..=======..=======..=======..===========",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      ], { start: [2, 8], powerAt: [8, 2], flag: [53, 8] }),
     },
   ];
 
@@ -388,7 +382,7 @@ body {
         else if (c === "d") line.push(1);
         else if (c === "s") line.push(6);
         else if (c === "?") {
-          line.push(0);
+          line.push(7);
           items.push({ type: "block", x: x * T, y: y * T, used: false });
         } else if (c === "o") {
           line.push(0);
@@ -477,7 +471,7 @@ body {
     state.boss = null;
     if (def.boss) {
       state.boss = {
-        x: 28 * T,
+        x: 26 * T,
         y: 8 * T,
         w: 22,
         h: 22,
@@ -569,7 +563,7 @@ body {
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
         const t = tileAt(x, y);
-        if (t === 1 || t === 6) return t;
+        if (t === 1 || t === 6 || t === 7) return t;
       }
     }
     return 0;
@@ -645,27 +639,6 @@ body {
           state.flash = 20;
           toast(`${p.ch.powerItem}! Schopnost: ${p.ch.powerName}`);
         }
-      } else if (it.type === "block" && !it.used) {
-        const hit =
-          p.vy < 0 &&
-          p.x + p.w > it.x &&
-          p.x < it.x + T &&
-          p.y < it.y + T &&
-          p.y + p.h > it.y + T - 4;
-        if (hit) {
-          it.used = true;
-          p.vy = 0;
-          // reveal nearest power or spawn crystal
-          const power = L.items.find((x) => x.type === "power" && !x.revealed);
-          if (power) {
-            power.revealed = true;
-            power.x = it.x + 2;
-            power.y = it.y - 14;
-            toast(`${p.ch.powerItem} se objevila!`);
-          } else {
-            L.items.push({ type: "crystal", x: it.x + 4, y: it.y - 12, taken: false });
-          }
-        }
       }
     }
 
@@ -673,8 +646,8 @@ body {
     for (const e of L.enemies) {
       if (!e.alive) continue;
       e.x += e.vx;
-      if (solidAt(e.x + (e.vx > 0 ? 14 : 0), e.y, 2, 14) === 1) e.vx *= -1;
-      if (e.y + 16 < L.h * T && solidAt(e.x + (e.vx > 0 ? 14 : 0), e.y + 16, 2, 2) !== 1) e.vx *= -1;
+      if (solidAt(e.x + (e.vx > 0 ? 14 : 0), e.y, 2, 14)) e.vx *= -1;
+      if (e.y + 16 < L.h * T && !solidAt(e.x + (e.vx > 0 ? 14 : 0), e.y + 16, 2, 2)) e.vx *= -1;
 
       const eb = { x: e.x, y: e.y, w: 14, h: 14 };
       if (!rects(p, eb)) continue;
@@ -695,7 +668,7 @@ body {
       pr.x += pr.vx;
       pr.y += pr.vy;
       pr.life--;
-      if (pr.life <= 0 || solidAt(pr.x, pr.y, pr.w, pr.h) === 1) pr.alive = false;
+      if (pr.life <= 0 || solidAt(pr.x, pr.y, pr.w, pr.h)) pr.alive = false;
       for (const e of L.enemies) {
         if (!e.alive) continue;
         if (rects(pr, { x: e.x, y: e.y, w: 14, h: 14 })) {
@@ -721,7 +694,7 @@ body {
       const b = state.boss;
       b.phase++;
       b.x += b.vx;
-      if (b.x < 10 * T || b.x > 36 * T) b.vx *= -1;
+      if (b.x < 8 * T || b.x > 44 * T) b.vx *= -1;
       if (b.phase % 90 === 0) {
         L.enemies.push({
           kind: "drone",
@@ -773,6 +746,29 @@ body {
     if (dy < 0) {
       p.y = Math.floor(p.y / T) * T + T;
       p.vy = 0;
+      bumpBlocksFromBelow(p);
+    }
+  }
+
+  function bumpBlocksFromBelow(p) {
+    const L = state.level;
+    const x0 = Math.floor(p.x / T);
+    const x1 = Math.floor((p.x + p.w - 0.01) / T);
+    const ty = Math.floor((p.y - 1) / T);
+    for (let x = x0; x <= x1; x++) {
+      if (tileAt(x, ty) !== 7) continue;
+      const it = L.items.find((b) => b.type === "block" && !b.used && b.x === x * T && b.y === ty * T);
+      if (!it) continue;
+      it.used = true;
+      const power = L.items.find((item) => item.type === "power" && !item.revealed);
+      if (power) {
+        power.revealed = true;
+        power.x = it.x + 2;
+        power.y = it.y - 14;
+        toast(`${p.ch.powerItem} se objevila!`);
+      } else {
+        L.items.push({ type: "crystal", x: it.x + 4, y: it.y - 12, taken: false });
+      }
     }
   }
 
